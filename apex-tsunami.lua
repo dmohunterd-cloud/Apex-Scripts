@@ -98,16 +98,16 @@ MainTab:CreateToggle({
     end
 })
 
---// COMMUNITY / DISCORD (Nouveau Bouton)
+--// COPIE DU LIEN PLACÉE TOUT EN BAS
 MainTab:CreateButton({
-    Name = "🔗 Copy Discord Link",
+    Name = "Copy",
     Callback = function()
         pcall(function()
             setclipboard("https://discord.gg/QssFzeGhZZ")
             Rayfield:Notify({
-                Title = "Discord Link",
-                Content = "Lien copié dans le presse-papiers !",
-                Duration = 3
+                Title = "Discord",
+                Content = "Lien copié !",
+                Duration = 2
             })
         end)
     end
