@@ -5,8 +5,22 @@ local Window = Rayfield:CreateWindow({
     Name = "🌊 Tsunami Instant Steal",
     LoadingTitle = "Loading Sigma Menu...",
     ConfigurationSaving = { Enabled = false },
-    KeySystem = false
+    KeySystem = true, -- Activé
+    KeySettings = {
+        Title = "Key System",
+        Subtitle = "Join Discord to get Key",
+        Note = "Discord Link: discord.gg/QssFzeGhZZ",
+        FileName = "TsunamiKey",
+        SaveKey = true,
+        GrabKeyFromSite = false,
+        Key = {"KA1RYCLb31ASg6i8RcT1uu6da"} -- Ta clé exacte
+    }
 })
+
+-- Copie du Discord automatique dans le presse-papier
+pcall(function()
+    setclipboard("https://discord.gg/QssFzeGhZZ")
+end)
 
 --// Services
 local Players = game:GetService("Players")
