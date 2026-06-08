@@ -17,7 +17,7 @@ local Window = Rayfield:CreateWindow({
     }
 })
 
--- Copie du Discord automatique dans le presse-papier
+-- Copie automatique du lien au lancement
 pcall(function()
     setclipboard("https://discord.gg/QssFzeGhZZ")
 end)
@@ -95,6 +95,21 @@ MainTab:CreateToggle({
     Callback = function(v)
         Player.CameraMaxZoomDistance = v and 100000 or 128
         Player.CameraMinZoomDistance = 0.5
+    end
+})
+
+--// COMMUNITY / DISCORD (Nouveau Bouton)
+MainTab:CreateButton({
+    Name = "🔗 Copy Discord Link",
+    Callback = function()
+        pcall(function()
+            setclipboard("https://discord.gg/QssFzeGhZZ")
+            Rayfield:Notify({
+                Title = "Discord Link",
+                Content = "Lien copié dans le presse-papiers !",
+                Duration = 3
+            })
+        end)
     end
 })
 
