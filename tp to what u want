@@ -1,0 +1,201 @@
+-- [[ APEX ULTIMATE SEA 3 HUB - PREMIUM ]] --
+-- UI Library: Rayfield
+
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+-- Configuration de la fenêtre principale
+local Window = Rayfield:CreateWindow({
+   Name = "⚔️ Apex Ultimate Sea 3 | Blox Fruits",
+   LoadingTitle = "Chargement d'Apex Ultimate...",
+   LoadingSubtitle = "by ApexScript",
+   ConfigurationSaving = { Enabled = true, FolderName = "ApexUltimate", FileName = "Config" },
+   Discord = { Enabled = true, Invite = "apexscript", RememberJoins = true },
+   KeySystem = true,
+   KeySettings = {
+      Title = "Apex Hub | Clé d'accès",
+      Subtitle = "Système de Clé",
+      Note = "Rejoins le Discord pour obtenir la clé !",
+      FileName = "ApexKey",
+      SaveKey = true,
+      GrabKeyFromUrl = false,
+      Key = {"ApexPremium2026"}
+   }
+})
+
+-- [[ VARIABLES ET PARAMÈTRES ]] --
+_G.TargetFeature = "None" -- Choix de la recherche (Full Moon, Boss, Mirage, etc.)
+_G.AutoHop = false
+
+local PlaceId = game.PlaceId
+local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+local LocalPlayer = game:GetService("Players").LocalPlayer
+local Lighting = game:GetService("Lighting")
+
+-- [[ FONCTIONS DE DÉTECTION ET SCAN ]] --
+
+-- 1. Vérification de la Lune (Full Moon & Near Full Moon)
+local function getMoonState()
+    -- Blox Fruits utilise souvent des textures ou des variables d'ID pour la lune.
+    -- Alternativement, le jeu se base sur un cycle de jours (28 ou 31 minutes réelles).
+    -- Voici le check standard basé sur les propriétés d'éclairage ou l'état visuel :
+    local texture = Lighting:FindFirstChild("MoonTexture") or workspace:FindFirstChild("Moon")
+    
+    -- Méthode classique basée sur le temps ou les indices de l'environnement de Blox Fruits :
+    if Lighting:AttributeGet("MoonProgress") then
+        local progress = Lighting:GetAttribute("MoonProgress") -- Exemple de variable interne commune
+        if progress >= 95 then return "Full Moon"
+        elseif progress >= 75 then return "Near Full Moon" end
+    end
+    
+    -- Fallback : Check visuel ou textuel générique utilisé par défaut
+    if game.Lighting:FindFirstChild("FullMoonEvent") or game.Lighting.TimeOfDay == "00:00:00" then
+        return "Full Moon"
+    end
+    return "Normal"
+end
+
+-- 2. Vérification des Boss du Sea 3
+local function checkBoss(bossName)
+    local enemies = workspace:FindFirstChild("Enemies") or workspace
+    local boss = enemies:FindFirstChild(bossName, true)
+    if boss and boss:FindFirstChild("Humanoid") and boss.Humanoid.Health > 0 then
+        return boss
+    end
+    return nil
+end
+
+-- 3. Vérification de Mirage Island ou Événement Kitsune
+local function checkEvent(eventName)
+    if eventName == "Mirage" then
+        -- Recherche l'île Mirage qui pop dynamiquement dans la mer
+        return workspace:FindFirstChild("Mirage Island") or workspace:FindFirstChild("MirageIsland")
+    elseif eventName == "Kitsune" then
+        -- Recherche l'île Kitsune ou le Boss Kitsune (Shrine / Event)
+        return workspace:FindFirstChild("Kitsune Island") or workspace:FindFirstChild("FoxSpawns")
+    end
+    return nil
+end
+
+-- 4. Logique Globale du Server Hop
+local function serverHop()
+    local url = "https://games.roblox.com/v1/games/" .. PlaceId .. "/servers/Public?limit=100"
+    local success, response = pcall(function() return game:HttpGet(url) end)
+    if success and response then
+        local data = HttpService:JSONDecode(response)
+        for _, server in pairs(data.data) do
+            if server.playing < server.maxPlayers and server.id ~= game.JobId then
+                pcall(function()
+                    TeleportService:TeleportToPlaceInstance(PlaceId, server.id, LocalPlayer)
+                end)
+                task.wait(0.5)
+            end
+        end
+    end
+end
+
+-- Boucle principale de gestion de l'automatisation
+task.spawn(function()
+    while task.wait(2) do
+        if _G.AutoHop and _G.TargetFeature ~= "None" then
+            local found = false
+            
+            if _G.TargetFeature == "Full Moon" and getMoonState() == "Full Moon" then found = true
+            elseif _G.TargetFeature == "Near Full Moon" and (getMoonState() == "Near Full Moon" or getMoonState() == "Full Moon") then found = true
+            elseif _G.TargetFeature == "Rip Indra" and checkBoss("rip_indra") then found = true
+            elseif _G.TargetFeature == "Cake Prince" and checkBoss("Cake Prince") then found = true
+            elseif _G.TargetFeature == "Mirage Island" and checkEvent("Mirage") then found = true
+            elseif _G.TargetFeature == "Kitsune Island" and checkEvent("Kitsune") then found = true
+            end
+            
+            if found then
+                _G.AutoHop = false
+                Rayfield:Notify({
+                    Title = "🎯 CIBLE TROUVÉE !",
+                    Content = "L'objectif [" .. _G.TargetFeature .. "] est actif sur ce serveur !",
+                    Duration = 15,
+                    Image = 4483362458
+                })
+            else
+                serverHop()
+            end
+        end
+    end
+end)
+
+
+-- [[ INTERFACE : ONGLET ENVIRONNEMENT (MOON / MIRAGE) ]] --
+local TabEnv = Window:CreateTab("🌙 Événements & Lune", 4483362458)
+
+TabEnv:CreateSection("Statut en Temps Réel")
+local MoonLabel = TabEnv:CreateLabel("État de la lune : Analyse...", 4483362458)
+local MirageLabel = TabEnv:CreateLabel("Mirage Island : Non détectée", 4483362458)
+
+task.spawn(function()
+    while task.wait(1) do
+        MoonLabel:Set("État de la lune : " .. getMoonState())
+        if checkEvent("Mirage") then MirageLabel:Set("Mirage Island : 🟢 UNIQUE ET ACTIVE !") else MirageLabel:Set("Mirage Island : 🔴 Absente") end
+    end
+end)
+
+TabEnv:CreateSection("Recherche Automatique")
+TabEnv:CreateDropdown({
+   Name = "Choisir l'événement à chercher",
+   Options = {"None", "Full Moon", "Near Full Moon", "Mirage Island", "Kitsune Island"},
+   CurrentOption = "None",
+   MultipleOptions = false,
+   Flag = "DropdownEnv",
+   Callback = function(Option) _G.TargetFeature = Option[1] end,
+})
+
+
+-- [[ INTERFACE : ONGLET BOSS (SEA 3) ]] --
+local TabBoss = Window:CreateTab("👹 Boss Sea 3", 4483362458)
+
+TabBoss:CreateSection("Liste des Boss")
+TabBoss:CreateDropdown({
+   Name = "Choisir le Boss à traquer",
+   Options = {"None", "Rip Indra", "Cake Prince", "Dough King", "Beautiful Pirate"},
+   CurrentOption = "None",
+   MultipleOptions = false,
+   Flag = "DropdownBoss",
+   Callback = function(Option)
+       if Option[1] == "None" then _G.TargetFeature = "None" else _G.TargetFeature = Option[1] end
+   end,
+})
+
+TabBoss:CreateButton({
+   Name = "Téléportation au Boss sélectionné",
+   Callback = function()
+       local targetBoss = checkBoss(_G.TargetFeature)
+       if targetBoss and targetBoss:FindFirstChild("HumanoidRootPart") then
+           LocalPlayer.Character.HumanoidRootPart.CFrame = targetBoss.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0)
+       else
+           Rayfield:Notify({Title = "Erreur", Content = "Le boss n'est pas disponible pour le TP.", Duration = 3})
+       end
+   end,
+})
+
+
+-- [[ INTERFACE : ACTIVATION DU MASTER HOP ]] --
+local TabHop = Window:CreateTab("🚀 Server Hopping", 4483362458)
+
+TabHop:CreateSection("Lancement du Bot")
+TabHop:CreateToggle({
+   Name = "Activer l'Auto Server Hop",
+   CurrentValue = false,
+   Flag = "ToggleMainHop",
+   Callback = function(Value)
+      _G.AutoHop = Value
+      if Value and _G.TargetFeature == "None" then
+          Rayfield:Notify({Title = "Attention", Content = "Sélectionne d'abord une cible dans les autres onglets !", Duration = 5})
+      end
+   end,
+})
+
+TabHop:CreateButton({
+   Name = "Force Hop (Changement de serveur immédiat)",
+   Callback = function() serverHop() end,
+})
+
+Rayfield:LoadConfiguration()
